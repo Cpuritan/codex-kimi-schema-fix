@@ -32,18 +32,23 @@ in the referenced schema instead of the parent schema>
 - In JSON Schema 2020-12 this is legal (`$ref` is just an applicator keyword,
   siblings are allowed), so OpenAI's own API accepts it.
 - Kimi/Moonshot validates tool schemas with its **"Moonshot Flavored JSON
-  Schema"** validator (walle), which follows **draft-07 / OpenAPI 3.0**
-  semantics: `$ref` must stand alone, and `type` must live inside the referenced
-  schema. It rejects the request with HTTP 400.
-- CC Switch's proxy forwards the schema **unchanged**. Its Moonshot/Kimi schema
-  normalization (PR #5125) covers part of the problem, but the `$ref`-sibling
-  inlining (PR #6627) was **still unmerged** when this project was written
+  Schema"** validator (walle — a name used in the Moonshot community and in
+  CC Switch's own code, not an official document name), which is **stricter
+  than draft-07**: draft-07 only says that sibling keywords of `$ref`
+  "MUST be ignored", while Kimi rejects the schema outright (OpenAPI 3.0
+  likewise forbids `$ref` siblings). Its error message states that `type`
+  should be defined in the referenced schema instead of the parent schema.
+  It rejects the request with HTTP 400.
+- CC Switch's proxy forwards the schema **unchanged**. Both upstream fixes —
+  the Moonshot/Kimi schema normalization (PR #5125) and the `$ref`-sibling
+  inlining (PR #6627) — were **still unmerged** when this project was written
   (2026-08-31), so simply updating CC Switch does not help yet.
 
 Observed timeline (from CC Switch request logs): hundreds of successful requests
-Aug 2–16, 2026; the first error appeared on Aug 31, right after a Codex update.
-Successes and failures interleave — only requests that include the dynamic tools
-fail; plain coding requests keep working.
+Aug 2–16, 2026; the first error appeared on Aug 31 — the same day the user
+reported updating Codex (user-reported; the Codex update itself was not
+independently verified). Successes and failures interleave — only requests that
+include the dynamic tools fail; plain coding requests keep working.
 
 ## The Solution
 
@@ -75,6 +80,8 @@ kimi_schema_fix.py    (127.0.0.1:8787)   ← dereferences $ref/$defs, strips /v1
    ▼
 Kimi For Coding API  (https://api.kimi.com/coding/v1)
 ```
+
+> Ports shown (15721 / 8787) are the author's instance; they may differ on your machine.
 
 ## Quick Start
 

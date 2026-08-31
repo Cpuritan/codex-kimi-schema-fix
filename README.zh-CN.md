@@ -31,17 +31,20 @@ in the referenced schema instead of the parent schema>
 
 - 在 2020-12 规范里这是合法写法（`$ref` 只是众多 applicator 之一，允许兄弟关键字），
   所以 OpenAI 官方 API 接受它。
-- 但 Kimi/Moonshot 用自研的 **"Moonshot Flavored JSON Schema"** 校验器（walle）校验
-  工具 schema，它遵循 **draft-07 / OpenAPI 3.0** 语义：`$ref` 必须独占整个 schema，
-  `type` 必须写在被引用的 schema 里。因此直接返回 HTTP 400。
-- cc-switch 代理**原样转发**这份 schema，不做规范化。它的 Moonshot/Kimi schema
-  规范化（PR #5125）只覆盖了一部分问题，而内联 `$ref` 兄弟关键字的修复
-  （PR #6627）截至本项目编写时（2026-08-31）**仍未合并**，所以单纯升级 cc-switch
-  暂时无效。
+- 但 Kimi/Moonshot 用自研的 **"Moonshot Flavored JSON Schema"** 校验器（walle——
+  该名称出自 Moonshot 社区讨论与 cc-switch 代码，并非官方文档命名）校验工具
+  schema，它**比 draft-07 更严格**：draft-07 只规定 `$ref` 的兄弟关键字
+  "MUST be ignored"（忽略），而 Kimi 直接**拒绝**（OpenAPI 3.0 同样禁止 `$ref`
+  带兄弟关键字），并在报错中要求 `type` 定义在被引用的 schema 里。因此直接返回
+  HTTP 400。
+- cc-switch 代理**原样转发**这份 schema，不做规范化。cc-switch 的两个上游修复——
+  Moonshot/Kimi schema 规范化（PR #5125）与内联 `$ref` 兄弟关键字（PR #6627）——
+  截至本项目编写时（2026-08-31）**均未合并**，所以单纯升级 cc-switch 暂时无效。
 
 时间线证据（来自 cc-switch 请求日志）：2026 年 8 月 2 日–16 日期间数百次请求全部
-成功；8 月 31 日 Codex 更新后出现第一条该报错。成功与失败交错出现——只有携带动态
-工具的请求会失败，普通编码请求不受影响。
+成功；8 月 31 日出现第一条该报错——与用户报告的 Codex 更新同日（用户报告，
+Codex 更新本身未独立验证）。成功与失败交错出现——只有携带动态工具的请求会失败，
+普通编码请求不受影响。
 
 ## 解决方案
 
@@ -72,6 +75,8 @@ kimi_schema_fix.py  (127.0.0.1:8787)   ← 解引用 $ref/$defs、去掉重复 /
    ▼
 Kimi For Coding API  (https://api.kimi.com/coding/v1)
 ```
+
+> 图中端口（15721 / 8787）为作者机器上的实际值，其他机器可能不同。
 
 ## 快速开始
 
